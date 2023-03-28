@@ -803,7 +803,7 @@ sqd serve
 
 </span>
 
-![](https://media.giphy.com/media/KgZtmd3iI1HoVIBnFf/giphy.gif)
+![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGRjZjM4YjkyZjA0NGE0NzgzYjUzZTEzZmYwYzc5YWQyNmExMzA5NSZjdD1n/Onz7Kbh3TlY6GVHp2q/giphy.gif)
 
 This project is available on [GitHub](https://github.com/RaekwonIII/encode-workshop)
 
