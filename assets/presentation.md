@@ -31,13 +31,18 @@ style: |
 <!-- _backgroundImage: url(./bg.png) -->
 <span class=title>
 
-## One framework to index them all
+## Combine EVM and Substrate data with Subsquid
 
 </span>
 
 <span class=subtitle>
 
-### (Combine EVM and Substrate data with Subsquid)
+### 
+### 
+### 
+### 
+
+#### One framework to index them all
 
 </span>
 
@@ -772,9 +777,9 @@ const processor = new SubstrateBatchProcessor()
 
 </span>
 
-* A **squid** need a database to store processed data
-* Templates have `docker-compose.yml` file to launch a container
-* From project's root folder, launch  `sqd up`
+- A **squid** need a database to store processed data
+- Templates have `docker-compose.yml` file to launch a container
+- From project's root folder, launch  `sqd up`
 
 ---
 
@@ -932,7 +937,7 @@ for (const transferData of transfersData) {
       from = new Owner({ id: transferData.from, balance: 0n });
       owners.set(from.id, from);
     }
-    from.balance = accountsData.get(from.id) || 0n
+    from.balanceGLMR = accountsData.get(from.id) || 0n
   // ...
 }
 ```
