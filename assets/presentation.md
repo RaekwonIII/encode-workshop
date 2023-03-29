@@ -303,7 +303,7 @@ Medium [medium.com/subsquid](https://medium.com/subsquid)
 
 <span class="subtitle">
 
-## Gromlin + GLMR tracker
+## USDT + GLMR tracker
 
 </span>
 
@@ -351,14 +351,26 @@ select `frontier-evm` template
 
 </span>
 
-Defined in `schema.graphql` file. Already correct! 🎉
-Only need to change `balance` to be mandatory
+Remove `Token`, edit `Owner` and `Transfer`
 
 ```graphql
 type Owner @entity {
   id: ID!
-  ownedTokens: [Token!]! @derivedFrom(field: "owner")
-  balance: BigInt!
+  balanceGLMR: BigInt!
+  balanceUSDT: BigInt!
+}
+
+# ...                                                                                       
+
+type Transfer @entity {
+  id: ID!
+  amountGLMR: BigInt!
+  amountUSDT: BigInt!
+  from: Owner
+  to: Owner
+  timestamp: BigInt!
+  block: Int!
+  transactionHash: String!
 }
 ```
 
@@ -435,9 +447,9 @@ sqd typegen-substrate
 
 </span>
 
-- DPS contract [from moonscan](https://moonscan.io/token/0x224AcB257f1E95Fe310E1ab9BB402C579bC5eeAE) (or just ERC-721)
-- In most cases, paste ABI into a JSON file (`dps.json`)
-- run command `sqd typegen dps.json --multicall`
+- USDT contract [from moonscan](https://moonscan.io/token/0xefaeee334f0fd1712f9a8cc375f427d9cdd40d73)
+- In most cases, paste ABI into a JSON file (`usdt.json`)
+- run command `sqd typegen usdt.json --multicall`
 
 ----
 
@@ -456,7 +468,7 @@ sqd typegen-substrate
 - Edit contract address
 
 ```typescript
-import { Contract as ContractAPI } from "./abi/erc721";
+import { Contract as ContractAPI } from "./abi/usdt";
 
 export const contractAddress = "0xf27a6c72398eb7e25543d19fda370b7083474735";
 ```
@@ -563,6 +575,62 @@ const processor = new SubstrateBatchProcessor()
 
 </span>
 
+- Edit data interface
+
+```typescript
+type TransferData = {
+  id: string;
+  from: string;
+  to: string;
+  amountUSDT?: bigint;
+  amountGLMR?: bigint;
+  timestamp: bigint;
+  block: number;
+  transactionHash: string;
+};
+```
+
+---
+<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
+
+<!-- .slide: class="smol" -->
+<!-- .slide: class="left" -->
+<span class="subtitle">
+
+# Processor 
+
+</span>
+
+- Fix `handleTransfer` func: decoding, interface
+
+```typescript
+function handleTransfer(
+  block: SubstrateBlock,
+  event: EvmLogEvent,
+  evmLog: EvmLog
+): TransferData {
+  const { from, to, value } = usdt.events.Transfer.decode(evmLog);
+  const transfer: TransferData = {
+    id: event.id,
+    amountUSDT: value.toBigInt(),
+    // ...
+  };
+  return transfer;
+}
+```
+
+---
+
+<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
+
+<!-- .slide: class="smol" -->
+<!-- .slide: class="left" -->
+<span class="subtitle">
+
+# Processor 
+
+</span>
+
 - Add data request for EVM logs
 
 ```typescript
@@ -619,56 +687,6 @@ const processor = new SubstrateBatchProcessor()
 ```
 
 ---
-
-<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
-
-<!-- .slide: class="smol" -->
-<!-- .slide: class="left" -->
-<span class="subtitle">
-
-# Processor 
-
-</span>
-
-- New data interface
-
-```typescript
-type BalanceData = {
-  id: string;
-  from: string;
-  to: string;
-  amount: bigint;
-  timestamp: bigint;
-  block: number;
-  transactionHash: string;
-};
-```
-
----
-
-<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
-
-<!-- .slide: class="smol" -->
-<!-- .slide: class="left" -->
-<span class="subtitle">
-
-# Processor 
-
-</span>
-
-- New interface array + `saveTransfers` function arg
-
-```typescript
-processor.run(database, async (ctx) => {
-  const transfersData: TransferData[] = [];
-  const balancesData: BalanceData[] = [];
-  // ...
-  await saveTransfers(ctx, transfersData, balancesData);
-});
-```
-
----
-
 <!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
 
 <!-- .slide: class="smol" -->
@@ -684,18 +702,31 @@ processor.run(database, async (ctx) => {
 ```typescript
       if (item.name === "Balances.Transfer") {
         // ...
-        const balance: BalanceData = {
+        transfersData.push({
           id: item.event.id,
           from: getAddress(toHex(balanceTransfer.from)),
           to: getAddress(toHex(balanceTransfer.to)),
           timestamp: BigInt(block.header.timestamp),
-          amount: balanceTransfer.amount,
+          amountGLMR: balanceTransfer.amount,
           block: block.header.height,
           transactionHash: item.event.extrinsic?.hash || "",
-        };
-        balancesData.push(balance);
+        });
       }
 ```
+
+---
+
+<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
+
+<!-- .slide: class="smol" -->
+<!-- .slide: class="left" -->
+<span class="subtitle">
+
+# Processor 
+
+</span>
+
+- Remove `Token` mentions from `saveTransfers`
 
 ---
 
@@ -712,19 +743,21 @@ processor.run(database, async (ctx) => {
 - Add logic to update balance (rough and inaccurate 😅)
 
 ```typescript
-  for (const balanceData of balancesData) {
-    let from = owners.get(balanceData.from);
+  for (const transferData of transfersData) {
+    let from = owners.get(transferData.from);
     if (from == null) {
-      from = new Owner({ id: balanceData.from, balance: 0n });
+      from = new Owner({ id: transferData.from, balanceGLMR: 0n, balanceUSDT: 0n });
       owners.set(from.id, from);
     }
-    from.balance -= balanceData.amount
-    let to = owners.get(balanceData.to);
+    from.balanceGLMR -= transferData.amountGLMR || 0n;
+    from.balanceUSDT -= transferData.amountUSDT || 0n;
+    let to = owners.get(transferData.to);
     if (to == null) {
-      to = new Owner({ id: balanceData.to, balance: 0n });
+      to = new Owner({ id: transferData.to, balanceGLMR: 0n, balanceUSDT: 0n });
       owners.set(to.id, to);
     }
-    to.balance += balanceData.amount
+    to.balanceGLMR += transferData.amountGLMR || 0n;
+    to.balanceUSDT += transferData.amountUSDT || 0n;
   }
 ```
 ---
@@ -799,7 +832,7 @@ sqd serve
 <!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
 <span class="subtitle">
 
-# Ta-da! 🎉
+# BAM! 🫳🎤⬇️
 
 </span>
 

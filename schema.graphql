@@ -1,15 +1,7 @@
-type Token @entity {
-  id: ID!
-  owner: Owner
-  uri: String
-  transfers: [Transfer!]! @derivedFrom(field: "token")
-  contract: Contract
-}
-
 type Owner @entity {
   id: ID!
-  ownedTokens: [Token!]! @derivedFrom(field: "owner")
-  balance: BigInt!
+  balanceGLMR: BigInt!
+  balanceUSDT: BigInt!
 }
 
 type Contract @entity {
@@ -17,12 +9,12 @@ type Contract @entity {
   name: String
   symbol: String
   totalSupply: BigInt
-  mintedTokens: [Token!]! @derivedFrom(field: "contract")
 }
 
 type Transfer @entity {
   id: ID!
-  token: Token!
+  amountGLMR: BigInt!
+  amountUSDT: BigInt!
   from: Owner
   to: Owner
   timestamp: BigInt!

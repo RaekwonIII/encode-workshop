@@ -1,10 +1,10 @@
 import { Store } from "@subsquid/typeorm-store";
 import { Contract } from "./model";
-import { Contract as ContractAPI } from "./abi/dps";
+import { Contract as ContractAPI } from "./abi/usdt";
 import { BigNumber } from "ethers";
 import { Context } from "./processor";
 
-export const contractAddress = "0x224AcB257f1E95Fe310E1ab9BB402C579bC5eeAE";
+export const contractAddress = "0xeFAeeE334F0Fd1712f9a8cc375f427D9Cdd40d73";
 export const MULTICALL_CONTRACT='0x6477204E12A7236b9619385ea453F370aD897bb2'
 
 export async function createContractEntity(ctx: Context): Promise<Contract> {

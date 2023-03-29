@@ -1,6 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {Token} from "./token.model"
 import {Owner} from "./owner.model"
 
 @Entity_()
@@ -12,9 +11,11 @@ export class Transfer {
     @PrimaryColumn_()
     id!: string
 
-    @Index_()
-    @ManyToOne_(() => Token, {nullable: true})
-    token!: Token
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    amountGLMR!: bigint
+
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    amountUSDT!: bigint
 
     @Index_()
     @ManyToOne_(() => Owner, {nullable: true})
