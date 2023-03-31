@@ -557,6 +557,26 @@ export async function getContractEntity(ctx: Context): Promise<Contract> {
 
 </span>
 
+- Change ABI bindings interface
+
+```typescript
+import * as usdt from "./abi/usdt";
+// ...
+```
+
+
+---
+
+<!-- .slide: data-background="https://i.imgur.com/4P35oA6.png" -->
+
+<!-- .slide: class="smol" -->
+<!-- .slide: class="left" -->
+<span class="subtitle">
+
+# Processor 
+
+</span>
+
 - Change archive and chain endpoint
 
 ```typescript
@@ -636,7 +656,7 @@ function handleTransfer(
 
 </span>
 
-- Add data request for EVM logs
+- Add data request for Substrate Event
 
 ```typescript
 const processor = new SubstrateBatchProcessor()
